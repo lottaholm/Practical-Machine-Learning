@@ -15,6 +15,7 @@ We start by loading the packages we need and reading in the data:
 setwd("~/Data Science/PML/Week 4")
 library(caret)
 library(dplyr)
+library(randomForest)
 ```
 ```{r data, cache=TRUE}
 train <- read.csv("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv")
@@ -73,28 +74,26 @@ The near zero -analysis shows us that the amount of values that are near zero ar
 We will use the random forest method which is an ensemble method, i.e. using multiple algorithms, hence no prior cross validation is needed. 
 The cross validation is accounted for by the fact that the random forest averages many decision trees that are trained on different parts 
 of the data.
-
+ 
+NB! My model of choice would have been to use "caret::train"" and "rf", and  based many of my assumptions in this report on this, but alas, 
+as the model appeared to be extremely slow, I had to change to randomForest::randomForest for the submission. 
 ```{r model, cache=TRUE}
-modFit <- train(classe ~ ., data=train2, method="rf",prox=TRUE)
+##modFit <- train(classe ~ ., data=train2, method="rf",prox=TRUE) ## Don't use, ran for seven hours before abortion
+modFit <- randomForest(classe~., data=train2, ntree=101)
 modFit
 ```
 
 ## Estimate of out of sample error
 
-The out-of-sample-error is the error of the model when applied to the test set. For random forest models this is called the out-of-bag  (OOB) error. The estimate for the error can, for random forets models, be calculated directly from the models accuracy (An Introduction to Statistical Learning (2013), pp. 317-318, Gareth et.al., http://www-bcf.usc.edu/~gareth/ISL/):
-```{r oob}
-modFit$results[2] 
-acc <- modFit$results[2]
-```
-Thus we can see that our random forest model run above has an OOB error rate of `r 1-mean(acc$Accuracy)`. 
+The out-of-sample-error is the error of the model when applied to the test set. For random forest models this is called the out-of-bag  (OOB) error. The estimate for the error can, for random forets models, be seen directly in the confusion matrix. Thus we can see that our random forest model run above has an OOB error rate of 30.7% which is quite big. This is probably due to the small amount of predictors and a better model could probably be found. Had I not struggled for too many hours with the train::caret version of the randomforest model, I would probably had had time to select a better model.
 
 
 ## Predicting on the test set and checking whether the prediction was accurate:
 
-We apply the model to the test set to see how well it predicts:
+We apply the model to the test set to see how it predicts (which cases it predicts to have been performed how):
 ```{r predict, cache=TRUE}
 pred <- predict(modFit, test)
-table(pred, test$problem_id) ## Table to show the predicted values cross tabulated with the real values.
+table(pred, test$problem_id) 
 ```
-The table above shows us how many of each classe were predicted correctly.
+
 
